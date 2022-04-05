@@ -6,7 +6,7 @@ import random
 from utils import consts
 import BNMP
 
-from db_utils.db_testing import db_testing
+from db.db_testing import db_testing
 
 # Parameters of the test database
 db_params = {
@@ -37,7 +37,7 @@ def reset_db():
         curs.execute(sql_drop_all_tables)
         conn.commit()
 
-    db_testing("bnmp_data", consts.sql_bnmp_create_table, db_params)
+    db_testing("bnmp", consts.sql_bnmp_create_table, db_params)
 
 
 def test_bulk():
@@ -51,7 +51,7 @@ def test_bulk():
     assert status
 
     with pg.connect(**db_params) as conn, conn.cursor() as curs:
-        curs.execute("SELECT * FROM bnmp_data;")
+        curs.execute("SELECT * FROM bnmp;")
         data_rows = curs.fetchall()
         # State 1 usually has more than 2k entries
         assert len(data_rows) > 2_000
@@ -67,7 +67,7 @@ def test_details():
     reset_db()
     test_row = (176449921, 1, '00022746620198010001',
                 '0002274662019801000101000403', datetime(2021, 3, 3).date(),
-                datetime(2022, 3, 3).date(), datetime(2022, 3, 3).date(), 1)
+                datetime(2022, 3, 3).date(), datetime(2022, 3, 3).date())
     with pg.connect(**db_params) as conn, conn.cursor() as curs:
         curs.execute(consts.sql_insert_mandado, test_row)
         conn.commit()
@@ -76,7 +76,7 @@ def test_details():
         status = scraper.start()
         assert status
 
-        curs.execute("SELECT * FROM bnmp_data;")
+        curs.execute("SELECT * FROM bnmp;")
         data_rows = curs.fetchall()
         # Check if JSON field is filled and has correct format
         assert data_rows[0][-1] is not None
