@@ -158,13 +158,15 @@ class Mapper:
 class BulkScraper:
     """Scraps the BNMP API."""
 
-    def __init__(self, db_params: dict = None) -> None:
+    def __init__(self, db_params: dict = None):
         """Add db params to the state, test them and set states ids range."""
         logging.info("Initializing Scraper")
         if db_params is not None:
             self.db_params = db_params
         else:
             self.db_params = config()
+
+        self.states = range(1, 28)
 
         db_testing("bnmp", consts.sql_bnmp_create_table, self.db_params)
 
@@ -215,7 +217,7 @@ class BulkScraper:
         """Start."""
         mapper = Mapper()
         with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
-            for obj in self.threads(mapper.gen_map(range(1, 28))):
+            for obj in self.threads(mapper.gen_map(self.states)):
                 logging.info("New query")
                 if obj.get('type'):
                     raise Exception(f"Error: {obj}")

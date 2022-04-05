@@ -45,7 +45,7 @@ def test_bulk():
     reset_db()
     scraper = BNMP.BulkScraper(db_params)
     # Manually changing test range
-    scraper.states_range = range(1, 2)
+    scraper.states = range(1, 2)
     status = scraper.start()
     # `start()` returns True on successes
     assert status
