@@ -6,7 +6,7 @@
 # "https://portalbnmp.cnj.jus.br/#/pesquisa-peca".
 # Extract it via your browser's developer tooklit.
 # Example: https://stackoverflow.com/a/4423097
-COOKIE = "portalbnmp=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJndWVzdF9wb3J0YWxibm1wIiwiYXV0aCI6IlJPTEVfQU5PTllNT1VTIiwiZXhwIjoxNjQ5MjU2NTUxfQ.6KJ7IYSh78vftoUzvwmCMj23vVDMM77TVcx2zM5T8ExGGtvX5WlcZP5fHIDzXTl9_M9oIDCLxKGNQRHPy9I-nA"  # noqa: E501 # flake8: ignore line size
+COOKIE = "portalbnmp=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJndWVzdF9wb3J0YWxibm1wIiwiYXV0aCI6IlJPTEVfQU5PTllNT1VTIiwiZXhwIjoxNjQ5MzM3MjU5fQ.NI5UsMDVPVTWY9pmDU4WYNWFxx7ZuxLHdA_lkIh54pywPdeTJ5qjwn1NFH7Cs2z9lx9ySoZR40iULnR2tuXn_Q"  # noqa: E501 # flake8: ignore line size
 
 # Multithreading request connections.
 # Change this value to alter the number of active threads a requester can keep.
