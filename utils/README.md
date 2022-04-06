@@ -1,1 +1,1 @@
-Contains constants and parameters used on the BNMP API scraping.
+Contains constants and parameters used on scraping.
