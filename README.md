@@ -18,3 +18,6 @@ python3 BNMP.py
 
 ### Note about usage and testing
 This program also depends on a updated cookie extracted from the BNMP API search headers. It must be placed in the `utils\params.py` file.
+
+### Note about server failures
+The BNMP API may give error responses due to service instability. There is no workaround for now, just re-run the program and it will continue from where it stoped.
