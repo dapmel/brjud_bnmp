@@ -10,6 +10,7 @@ import psycopg2 as pg
 import requests
 from db.db_config import config
 from db.db_testing import DBTester
+from utils.funcs import define_payload
 
 import yaml
 
@@ -17,24 +18,7 @@ with open("utils/config.yml") as ymlfile:
     cfg = yaml.safe_load(ymlfile)
 
 logging.basicConfig(
-    format="[%(asctime)s %(funcName)s():%(lineno)s]%(levelname)s: %(message)s",
-    datefmt="%H:%M:%S", level=logging.INFO)
-
-
-def define_payload(d: dict) -> str:
-    """Define and populate a request payload format based on a maps' keys."""
-    # Document type queries
-
-    query_types: List[str] = ["doctype", "agency", "city", "state"]
-    for query in query_types:
-        if d.get(query):
-            payload: str = cfg["payloads"][query]
-            break
-
-    # The string won't be formatted with values it doesn't support
-    return payload.format(
-        state=d.get("state"), city=d.get("city"), agency=d.get("agency"),
-        doctype=d.get("doctype"))
+    format=cfg["log"]["format"], datefmt="%H:%M:%S", level=logging.INFO)
 
 
 class Mapper:
@@ -63,7 +47,7 @@ class Mapper:
         probe: str = self.requester(d)
         # Error response
         if probe.get("type"):
-            raise Exception(probe)
+            raise Exception(probe)  # pragma: no cover
 
         probe_size: int = int(probe["totalPages"]) if probe.get(
             "totalPages") else 0
@@ -208,7 +192,8 @@ class BulkScraper:
                 url = cfg["url"]["base"].format(
                     page=page, query_size=2_000, order="DESC")
                 response = requests.post(
-                    url, headers=cfg["requests"]["headers"], data=data, timeout=30)
+                    url, headers=cfg["requests"]["headers"], data=data,
+                    timeout=30)
                 yield json.loads(response.text)
 
     def threads(self, maps: Generator) -> Generator:
@@ -228,7 +213,7 @@ class BulkScraper:
         with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
             for obj in self.threads(mapper.gen_map(self.states)):
                 if obj.get('type'):
-                    raise Exception(f"Error: {obj}")
+                    raise Exception(f"Error: {obj}")  # pragma: no cover
                 for process in obj["content"]:
                     # dates are for "scrap_date" and "last_seen" fields
                     curs.execute(cfg["sql"]["insert"], (
@@ -280,12 +265,3 @@ class DetailsScraper:
 
         logging.info("Detailed data extraction complete")
         return True
-
-
-if __name__ == "__main__":
-    logging.info("BNMP API scraping started")
-    bulk = BulkScraper()
-    bulk.start()
-    details = DetailsScraper()
-    details.start()
-    logging.info("BNMP API scraping done")
