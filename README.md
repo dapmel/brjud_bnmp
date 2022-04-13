@@ -1,3 +1,6 @@
+[![codecov](https://codecov.io/gh/tohwiket/brjud_bnmp/branch/main/graph/badge.svg?token=ELY4OK6V9A)](https://codecov.io/gh/tohwiket/brjud_bnmp)
+![example workflow](https://github.com/tohwiket/brjud_bnmp/actions/workflows/bnmp.yml/badge.svg)
+
 # BRJUD BNMP
 
 Scraps data from Banco Nacional de Mandados de Prisão 2.0 (BNMP2) API.
