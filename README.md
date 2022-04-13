@@ -11,16 +11,31 @@ The current version of BNMPs portal is broken as it cannot return more than 10k 
 ## About
 Automatically extracts all the data available in the BNMP2 API through multiple queries. First it maps the API and calculates what queries will be needed to extract all data available, does the bulk data extraction and then saves detailed data from each document.
 
-This program needs a functionining Postgresql database to work. The database configuration parameters must be included in the `db\database.ini` file.
-
 ## Usage
+### Requirements
+This program needs a functionining Postgresql database to work. The database configuration parameters must be included in the `db\database.yml` file.
+
+### Install required packages
 ```
 python3 -m pip install -r requirements.txt
-python3 BNMP.py
 ```
 
-### Note about usage and testing
-This program also depends on a updated cookie extracted from the BNMP API search headers. It must be placed in the `utils\params.py` file.
+### Update your cookies!
+This program also depends on a updated cookie extracted from the BNMP API search headers. It must be placed in the `utils\config.yml` file.
 
-### Note about server failures
-The BNMP API may give error responses due to service instability. There is no workaround for now, just re-run the program and it will continue from where it stoped.
+### Test your copy
+```
+python3 -m pytest --cov=./ --cov-config .coveragerc
+```
+
+## Sample usage
+```
+import BNMP
+bulk = BNMP.BulkScraper()
+bulk.start()
+details = BNMP.DetailsScraper()
+details.start()
+```
+
+## Note about server failures
+The BNMP API may give error responses due to service instability. There is no workarounds for now, just re-run the program and it will continue from where it stoped.
