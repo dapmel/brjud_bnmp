@@ -2,27 +2,20 @@
 
 The configuration file must be a sibling to this file.
 """
-from configparser import ConfigParser
-
 import os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+import yaml
 
 
-def config(filename=BASE_DIR + "/database.ini", section="db"):
-    """Extract data from database config file."""
-    # create a parser
-    parser = ConfigParser()
-    # read config file
-    parser.read(filename)
+def config(filename="database.yml"):
+    """Extract data from DB config file and return it if it is valid."""
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    file_with_path = f"{BASE_DIR}/{filename}"
 
-    # get section, default to postgresql
-    db = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            db[param[0]] = param[1]
-    else:
-        raise Exception(
-            'Section {0} not found in the {1} file'.format(section, filename))
+    with open(file_with_path) as ymlfile:
+        cfg = yaml.safe_load(ymlfile)
 
-    return db
+    params: dict = cfg["db_params"]
+    for key in ["host", "database", "user", "password"]:
+        if key not in params:
+            raise Exception(f"Section '{key}' not found in '{filename}'")
+    return params

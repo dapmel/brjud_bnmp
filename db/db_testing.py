@@ -1,51 +1,38 @@
 """Tools to test databases and tables."""
 import psycopg2 as pg
-
 from db_config import config
 
-db_params = config()
 
+class DBTester:
+    """Test database connection, create table if it does not exist."""
 
-def db_testing(table_name, sql, db_params=None):
-    """Test database connection and create table if it does not exist."""
-    if not db_params:
-        db_params = config()
+    def __init__(self, table_name: str, sql: str, db_params: dict = None):
+        """Initialize db params and run methods as needed."""
+        self.db_params = db_params if db_params is not None else config()
+        self.test_db_connection()
+        if not self.test_table(table_name):
+            self.create_table(sql)
 
-    def test_db_connection():
+    def test_db_connection(self):
         """Test if database connection is doable."""
-        conn = None
-        try:
-            conn = pg.connect(**db_params)
-            return conn
-        except (Exception, pg.DatabaseError) as error:
-            print(error)
-        return False
+        conn = pg.connect(**self.db_params)
+        return conn
 
-    def test_table(table_name):
+    def test_table(self, table_name: str) -> bool:
         """Test if table exists. Creates it if it does not."""
-        with pg.connect(**db_params) as conn, conn.cursor() as curs:
+        with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
             curs.execute(f"""
-            SELECT COUNT(*)
-                FROM information_schema.tables
-                WHERE table_name = '{table_name}'
-            """)
+                SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_name = '{table_name}'
+                """)
             table_exists: int = curs.fetchone()[0]
-        if table_exists:
-            return True
-        return False
+        return True if table_exists else False
 
-    def create_table(sql):
+    def create_table(self, sql: str) -> None:
         """Create a table with a given SQL."""
-        with pg.connect(**db_params) as conn, conn.cursor() as curs:
+        with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
             curs.execute(sql)
-            # commit the changes
             conn.commit()
-
-    test_db_connection()
-    if not test_table(table_name):
-        create_table(sql)
-
-
-if __name__ == "__main__":
-    # This won't be run when imported
-    pass
+            curs.execute("SET datestyle = dmy;")
+            conn.commit()

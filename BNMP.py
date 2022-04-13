@@ -8,10 +8,13 @@ import json
 import logging
 import psycopg2 as pg
 import requests
-import utils.consts as consts
-import utils.params as params
 from db.db_config import config
-from db.db_testing import db_testing
+from db.db_testing import DBTester
+
+import yaml
+
+with open("utils/config.yml") as ymlfile:
+    cfg = yaml.safe_load(ymlfile)
 
 logging.basicConfig(
     format="[%(asctime)s %(funcName)s():%(lineno)s]%(levelname)s: %(message)s",
@@ -21,17 +24,12 @@ logging.basicConfig(
 def define_payload(d: dict) -> str:
     """Define and populate a request payload format based on a maps' keys."""
     # Document type queries
-    if d.get("doctype"):
-        payload: str = consts.doctype_payload
-    # Agency queries
-    elif d.get("agency"):
-        payload = consts.agency_payload
-    # City queries
-    elif d.get("city"):
-        payload = consts.city_payload
-    # State queries
-    else:
-        payload = consts.state_payload
+
+    query_types: List[str] = ["doctype", "agency", "city", "state"]
+    for query in query_types:
+        if d.get(query):
+            payload: str = cfg["payloads"][query]
+            break
 
     # The string won't be formatted with values it doesn't support
     return payload.format(
@@ -54,9 +52,10 @@ class Mapper:
     def requester(self, d: dict) -> dict:
         """Make a probing request to the API and return a JSON dict."""
         data: str = define_payload(d)
-        url: str = consts.base_url.format(page=0, query_size=1, order="ASC")
+        url: str = cfg["url"]["base"].format(page=0, query_size=1, order="ASC")
         response: requests.models.Response = requests.post(
-            url, headers=consts.headers, data=data, timeout=30)
+            url, headers=cfg["requests"]["headers"], data=data,
+            timeout=cfg["requests"]["timeout"])
         return json.loads(response.text)
 
     def probe(self, d):
@@ -78,9 +77,9 @@ class Mapper:
 
     def cities_retriever(self, state: int) -> Generator[int, None, None]:
         """Return a generator of cities ids in a state."""
-        url: str = consts.cities_url.format(state=state)
+        url: str = cfg["url"]["cities"].format(state=state)
         response: requests.models.Response = requests.get(
-            url, headers=consts.headers)
+            url, headers=cfg["requests"]["headers"])
         cities_json = json.loads(response.text)
         return (i["id"] for i in cities_json)
 
@@ -90,15 +89,16 @@ class Mapper:
         Returns strings formatted as ``{"id":number}`` because the API expects
         a "JSON object" as a ``orgaoExpeditor`` parameter.
         """
-        url: str = consts.agencies_url.format(city=city)
+        url: str = cfg["url"]["agencies"].format(city=city)
         response: requests.models.Response = requests.get(
-            url, headers=consts.headers)
+            url, headers=cfg["requests"]["headers"])
         agencies_json: dict = json.loads(response.text)
         return (f'{{"id":{agency["id"]}}}' for agency in agencies_json)
 
     def threads(self, maps) -> Generator:
         """Generate and run a requests threadpool and yield data."""
-        with ThreadPoolExecutor(max_workers=params.CONNECTIONS) as executor:
+        with ThreadPoolExecutor(
+                max_workers=cfg["threads"]["max_workers"]) as executor:
             futures = (executor.submit(self.probe, d) for d in maps)
             for future in as_completed(futures):
                 data = future.result()
@@ -178,7 +178,7 @@ class BulkScraper:
         logging.info("Initializing")
         self.db_params = db_params if db_params is not None else config()
         self.states = range(1, 28)
-        db_testing("bnmp", consts.sql_bnmp_create_table, self.db_params)
+        DBTester("bnmp", cfg["sql"]["create"], self.db_params)
 
     def requester(self, d) -> Generator:
         """Request API data."""
@@ -198,22 +198,23 @@ class BulkScraper:
         depth = [*d.values()][-2]
         include_descending = [*d.values()][-1]
         for page in calc_range(depth):
-            url = consts.base_url.format(
+            url = cfg["url"]["base"].format(
                 page=page, query_size=2_000, order="ASC")
             response = requests.post(
-                url, headers=consts.headers, data=data, timeout=30)
+                url, headers=cfg["requests"]["headers"], data=data, timeout=30)
             yield json.loads(response.text)
 
             if include_descending:
-                url = consts.base_url.format(
+                url = cfg["url"]["base"].format(
                     page=page, query_size=2_000, order="DESC")
                 response = requests.post(
-                    url, headers=consts.headers, data=data, timeout=30)
+                    url, headers=cfg["requests"]["headers"], data=data, timeout=30)
                 yield json.loads(response.text)
 
     def threads(self, maps: Generator) -> Generator:
         """Generate and run a requests threadpool and yield data."""
-        with ThreadPoolExecutor(max_workers=params.CONNECTIONS) as executor:
+        with ThreadPoolExecutor(
+                max_workers=cfg["threads"]["max_workers"]) as executor:
             futures = (executor.submit(self.requester, d)
                        for d in maps if d is not None)
             for future in as_completed(futures):
@@ -230,7 +231,7 @@ class BulkScraper:
                     raise Exception(f"Error: {obj}")
                 for process in obj["content"]:
                     # dates are for "scrap_date" and "last_seen" fields
-                    curs.execute(consts.sql_insert_mandado, (
+                    curs.execute(cfg["sql"]["insert"], (
                         process["id"], process["idTipoPeca"],
                         process["numeroProcesso"], process["numeroPeca"],
                         process["dataExpedicao"], datetime.now().date(),
@@ -249,17 +250,18 @@ class DetailsScraper:
         logging.info("Initiating")
         self.db_params = db_params if db_params is not None else config()
         with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
-            curs.execute(consts.sql_mandados_without_json)
-            self.pending_urls: Set[str] = {consts.url_endpoint.format(
+            curs.execute(cfg["sql"]["select_incomplete"])
+            self.pending_urls: Set[str] = {cfg["url"]["details"].format(
                 id=i[0], type=i[1]) for i in curs.fetchall()}
 
     def load_url(self, url: str) -> str:
         """Return the response text of a request."""
-        return requests.get(url, headers=consts.headers, timeout=30).text
+        return requests.get(url, headers=cfg["requests"]["headers"],
+                            timeout=cfg["requests"]["timeout"]).text
 
     def threads(self, urls: Set[str]) -> Generator:
         """Generate and run a requests threadpool and yield valid data."""
-        with ThreadPoolExecutor(max_workers=params.CONNECTIONS) as executor:
+        with ThreadPoolExecutor(cfg["threads"]["max_workers"]) as executor:
             futures = (executor.submit(self.load_url, url) for url in urls)
             for future in as_completed(futures):
                 data = future.result()
@@ -272,7 +274,7 @@ class DetailsScraper:
         with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
             for res in self.threads(self.pending_urls):
                 json_res = json.loads(res)
-                curs.execute(consts.sql_update_json,
+                curs.execute(cfg["sql"]["update_json"],
                              (json.dumps(json_res), json_res['id']))
                 conn.commit()
 

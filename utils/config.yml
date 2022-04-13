@@ -1,0 +1,70 @@
+log:
+  format: "[%(asctime)s %(funcName)s():%(lineno)s]%(levelname)s: %(message)s"
+
+payloads:
+  state: '{{"buscaOrgaoRecursivo":false,"orgaoExpeditor":{{}},"idEstado":{state}}}'
+  city: '{{"buscaOrgaoRecursivo":false,"orgaoExpeditor":{{}},"idEstado":{state},"idMunicipio":{city}}}'
+  agency: '{{"buscaOrgaoRecursivo":false,"orgaoExpeditor":{agency},"idEstado":{state},"idMunicipio":{city}}}'
+  doctype: '{{"buscaOrgaoRecursivo":false,"orgaoExpeditor":{agency},"idEstado":{state},"idMunicipio":{city},"idTipoDocumento":{doctype}}}'
+
+requests:
+  headers:
+    content-type: application/json;charset=UTF-8
+    cookie: portalbnmp=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJndWVzdF9wb3J0YWxibm1wIiwiYXV0aCI6IlJPTEVfQU5PTllNT1VTIiwiZXhwIjoxNjQ5ODU1ODE2fQ.ytXKGRp__MVB205-8TsDEuN1BL7h_PpqpxbzTMh4sZ39kr2iRX_1iW7sdo5eIHViW5HQgBOvJZhRZFra_Eai8A
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36
+  timeout: 60
+
+sql:
+  create: >-
+    CREATE TABLE IF NOT EXISTS bnmp (
+      mandado_id integer PRIMARY KEY,
+      mandado_type smallint NOT NULL,
+      processo_number VARCHAR(100) NOT NULL,
+      peca_number VARCHAR(100) NOT NULL,
+      expedition_date DATE NOT NULL,
+      scrap_date DATE NOT NULL,
+      last_seen_date DATE NOT NULL,
+      jsonb jsonb
+    );
+  insert: >-
+    INSERT INTO bnmp (
+      mandado_id, mandado_type, processo_number, peca_number,
+      expedition_date, scrap_date, last_seen_date
+    ) VALUES(%s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (mandado_id) DO UPDATE
+    SET (last_seen_date) = ROW(EXCLUDED.last_seen_date);
+  select_incomplete: SELECT mandado_id, mandado_type FROM bnmp WHERE jsonb IS NULL;
+  update_json: UPDATE bnmp SET jsonb = %s WHERE mandado_id = %s;
+
+
+testing:
+  db_params:
+    host: localhost
+    database: jusdata_test
+    user: postgres
+    password: postgres
+  sql:
+    drop_all: >-
+      DO $$ DECLARE
+      r RECORD;
+      BEGIN
+      FOR r IN (SELECT tablename FROM pg_tables
+          WHERE schemaname = current_schema()) LOOP
+          EXECUTE 'DROP TABLE ' || quote_ident(r.tablename) || ' CASCADE';
+      END LOOP;
+      END $$;
+    find_table: >-
+      SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_name = %s;
+
+threads:
+  max_workers: 24
+
+url:
+  base: https://portalbnmp.cnj.jus.br/bnmpportal/api/pesquisa-pecas/filter?page={page}&size={query_size}&sort=numeroPeca,{order}
+  cities: https://portalbnmp.cnj.jus.br/scaservice/api/municipios/por-uf/{state}
+  agencies: https://portalbnmp.cnj.jus.br/bnmpportal/api/pesquisa-pecas/orgaos/municipio/{city}
+  details: https://portalbnmp.cnj.jus.br/bnmpportal/api/certidaos/{id}/{type}
+
+# xpath:
