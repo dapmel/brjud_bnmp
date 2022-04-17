@@ -9,14 +9,24 @@ class DBTester:
     def __init__(self, table_name: str, sql: str, db_params: dict = None):
         """Initialize db params and run methods as needed."""
         self.db_params = db_params if db_params is not None else config()
-        self.test_db_connection()
+        self.test_server_and_db()
         if not self.test_table(table_name):
             self.create_table(sql)
 
-    def test_db_connection(self):
-        """Test if database connection is doable."""
-        conn = pg.connect(**self.db_params)
-        return conn
+    def test_server_and_db(self):
+        """Connect to the server and create database if it does not exist."""
+        try:
+            conn = pg.connect(**self.db_params)
+            conn.close()
+        except pg.OperationalError:
+            # Create database if it does
+            conn = pg.connect(
+                f"host=localhost user={self.db_params['user']} "
+                f"password={self.db_params['password']}")
+            conn.autocommit = True
+            with conn.cursor() as curs:
+                curs.execute(f"CREATE DATABASE {self.db_params['database']};")
+            conn.close()
 
     def test_table(self, table_name: str) -> bool:
         """Test if table exists. Creates it if it does not."""

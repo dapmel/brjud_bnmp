@@ -48,25 +48,17 @@ class TestDBUtils:
         for key in ["host", "database", "user", "password"]:
             assert key in params
 
-    def test_database_and_tables(self):
-        """Test database availability and existence/creation of log table.
-
-        Other tests will create tables as well. This test simply allows
-        detailed testing of the general table creation mechanism if needed.
-        """
+    def test_dbtester(self):
+        """Check if DBTester is effectively creating database and table."""
         self.db_params = cfg["testing"]["db_params"]
 
-        assert pg.connect(**self.db_params)
+        # This call will create a table and a database if any does not exist
+        DBTester("bnmp", cfg["sql"]["create"], self.db_params)
 
         with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
-            # Drop all existing tables
-            curs.execute(cfg["testing"]["sql"]["drop_all"])
-            conn.commit()
-
-            # Create 'bnmp' table and test its existence
-            DBTester("bnmp", cfg["sql"]["create"], self.db_params)
+            # Assert everything was deleted
             curs.execute(cfg["testing"]["sql"]["find_table"], ("bnmp",))
-            assert curs.fetchone()[0]
+            assert curs.fetchone()[0] == 1
 
 
 class TestBNMP:

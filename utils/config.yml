@@ -10,7 +10,7 @@ payloads:
 requests:
   headers:
     content-type: application/json;charset=UTF-8
-    cookie: portalbnmp=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJndWVzdF9wb3J0YWxibm1wIiwiYXV0aCI6IlJPTEVfQU5PTllNT1VTIiwiZXhwIjoxNjQ5OTQ3Njg4fQ.qQGvU2LUCFhkhvbwIxvLq_RV6oHK268ERzvgwxaZlAPdpUyH_nnvbdLGSm0aQUKTGqYatFiTpEZvCxfmb9AbwA
+    cookie: portalbnmp=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJndWVzdF9wb3J0YWxibm1wIiwiYXV0aCI6IlJPTEVfQU5PTllNT1VTIiwiZXhwIjoxNjUwMjc4NjM3fQ.UYfcS6uGwSh3psFfvYK8on-xjTBp1KSy-msjd3sLUN0NHELhNy0Q5Ei61XdkrbN6sekmjNYiRItoLjRGFGtNJg
     user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36
   timeout: 60
 
