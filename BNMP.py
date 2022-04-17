@@ -161,7 +161,8 @@ class BulkScraper:
         """Add db params to the state, test them and set states ids range."""
         logging.info("Initializing")
         self.db_params = db_params if db_params is not None else config()
-        self.states = range(1, 28)
+        # self.states = range(1, 28)
+        self.states = [26]
         DBTester("bnmp", cfg["sql"]["create"], self.db_params)
 
     def requester(self, d) -> Generator:
