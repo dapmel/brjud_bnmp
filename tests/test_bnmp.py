@@ -49,7 +49,11 @@ class TestDBUtils:
             assert key in params
 
     def test_dbtester(self):
-        """Check if DBTester is effectively creating database and table."""
+        """Check if DBTester is effectively creating database and table.
+
+        The ``DBTester.test_server_and_db()`` method can only be fully covered
+        by testing if the testing database does not exist.
+        """
         self.db_params = cfg["testing"]["db_params"]
 
         # This call will create a table and a database if any does not exist
@@ -74,6 +78,15 @@ class TestBNMP:
             conn.commit()
 
         DBTester("bnmp", cfg["sql"]["create"], db_params)
+
+    def test_mapper(self):
+        """Test ``Mapper`` with the most demanding state.
+
+        Data quality will be certfied indirectly on ``test_bulk``. This test is
+        for full coverage purposes.
+        """
+        mapper = BNMP.Mapper()
+        tuple(mapper.gen_map([19]))
 
     def test_bulk(self):
         """Test bulk scraper."""
