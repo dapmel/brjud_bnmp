@@ -48,25 +48,21 @@ class TestDBUtils:
         for key in ["host", "database", "user", "password"]:
             assert key in params
 
-    def test_database_and_tables(self):
-        """Test database availability and existence/creation of log table.
+    def test_dbtester(self):
+        """Check if DBTester is effectively creating database and table.
 
-        Other tests will create tables as well. This test simply allows
-        detailed testing of the general table creation mechanism if needed.
+        The ``DBTester.test_server_and_db()`` method can only be fully covered
+        by testing if the testing database does not exist.
         """
         self.db_params = cfg["testing"]["db_params"]
 
-        assert pg.connect(**self.db_params)
+        # This call will create a table and a database if any does not exist
+        DBTester("bnmp", cfg["sql"]["create"], self.db_params)
 
         with pg.connect(**self.db_params) as conn, conn.cursor() as curs:
-            # Drop all existing tables
-            curs.execute(cfg["testing"]["sql"]["drop_all"])
-            conn.commit()
-
-            # Create 'bnmp' table and test its existence
-            DBTester("bnmp", cfg["sql"]["create"], self.db_params)
+            # Assert everything was deleted
             curs.execute(cfg["testing"]["sql"]["find_table"], ("bnmp",))
-            assert curs.fetchone()[0]
+            assert curs.fetchone()[0] == 1
 
 
 class TestBNMP:
@@ -82,6 +78,15 @@ class TestBNMP:
             conn.commit()
 
         DBTester("bnmp", cfg["sql"]["create"], db_params)
+
+    def test_mapper(self):
+        """Test ``Mapper`` with the most demanding state.
+
+        Data quality will be certfied indirectly on ``test_bulk``. This test is
+        for full coverage purposes.
+        """
+        mapper = BNMP.Mapper()
+        tuple(mapper.gen_map([19]))
 
     def test_bulk(self):
         """Test bulk scraper."""

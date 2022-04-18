@@ -169,12 +169,12 @@ class BulkScraper:
         def calc_range(depth: int) -> range:
             """Return the page range needed to reach a given depth.
 
-            The maximum value is 4 as the API can only return 10k results in a
+            The maximum value is 5 as the API can only return 10k results in a
             given query.
             """
             max_range: int = (int(depth) // 2_000) + 1
-            if max_range > 4:
-                max_range = 4
+            if max_range > 5:
+                max_range = 5
             return range(max_range)
 
         data: str = define_payload(d)
