@@ -27,14 +27,11 @@ This program also depends on a updated cookie extracted from the BNMP API search
 ```
 python3 -m pytest --cov=./ --cov-config .coveragerc
 ```
+(This will create a testing db and table.)
 
 ## Sample usage
 ```
-import BNMP
-bulk = BNMP.BulkScraper()
-bulk.start()
-details = BNMP.DetailsScraper()
-details.start()
+python3 main.py
 ```
 
 ## Note about server failures
